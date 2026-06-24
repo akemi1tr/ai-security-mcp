@@ -1,0 +1,5 @@
+node_modules/
+build/
+.system_generated/
+*.log
+.env
