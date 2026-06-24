@@ -8,7 +8,10 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "skipDefaultLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": [],
+    "maxNodeModuleJsDepth": 0
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build", "tests", "test_server.ts"]
