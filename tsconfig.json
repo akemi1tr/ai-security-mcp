@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": [],
+    "types": ["node", "jest"],
     "maxNodeModuleJsDepth": 0
   },
   "include": ["src/**/*"],
