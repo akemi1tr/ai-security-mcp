@@ -1,22 +1,20 @@
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { validateMcpConfiguration } from "../utils/securityCheckers";
+
+export const validateMcpConfigSchema = z.object({
+  configContent: z.string().min(1, "Configuration content cannot be empty").describe("The raw JSON configuration string of the MCP server configuration.")
+});
 
 export const validateMcpConfigDef = {
   name: "validate_mcp_config",
   description: "Analyzes an MCP configuration JSON content, identifying excessive privileges, dangerous tool configurations, and command poisoning risks.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      configContent: {
-        type: "string",
-        description: "The raw JSON configuration string of the MCP server configuration."
-      }
-    },
-    required: ["configContent"]
-  }
+  inputSchema: zodToJsonSchema(validateMcpConfigSchema)
 };
 
-export function handleValidateMcpConfig(args: { configContent: string }) {
-  const result = validateMcpConfiguration(args.configContent);
+export function handleValidateMcpConfig(args: unknown) {
+  const parsed = validateMcpConfigSchema.parse(args);
+  const result = validateMcpConfiguration(parsed.configContent);
   return {
     content: [
       {

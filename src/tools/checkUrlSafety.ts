@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 export interface UrlSafetyIssue {
   url: string;
   reason: string;
@@ -14,28 +17,24 @@ const IP_URL_PATTERN = /^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/i;
 const SUSPICIOUS_TLDS = [".xyz", ".ru", ".su", ".tk", ".fit", ".zip", ".gq", ".cf", ".ga", ".ml"];
 const SUSPICIOUS_WORDS = ["login", "verify", "update", "banking", "paypal", "secure-signin", "signin", "support-", "claim-"];
 
+export const checkUrlSafetySchema = z.object({
+  text: z.string().min(1, "Text cannot be empty").describe("The text content containing URLs to evaluate.")
+});
+
 export const checkUrlSafetyDef = {
   name: "check_url_safety",
   description: "Extracts and checks URLs in the provided text for suspicious indicators such as IP address hosting, insecure HTTP protocols, high-risk TLDs, or phishing patterns.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      text: {
-        type: "string",
-        description: "The text content containing URLs to evaluate."
-      }
-    },
-    required: ["text"]
-  }
+  inputSchema: zodToJsonSchema(checkUrlSafetySchema)
 };
 
-export function handleCheckUrlSafety(args: { text: string }): { content: { type: string; text: string }[] } {
+export function handleCheckUrlSafety(args: unknown) {
+  const parsed = checkUrlSafetySchema.parse(args);
   const issues: UrlSafetyIssue[] = [];
   const urls: string[] = [];
   let match;
 
   URL_PATTERN.lastIndex = 0;
-  while ((match = URL_PATTERN.exec(args.text)) !== null) {
+  while ((match = URL_PATTERN.exec(parsed.text)) !== null) {
     urls.push(match[0]);
   }
 

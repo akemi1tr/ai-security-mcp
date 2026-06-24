@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 export interface SecretMatch {
   type: string;
   value: string;
@@ -22,28 +25,24 @@ const SECRET_PATTERNS: Record<string, RegExp> = {
   privateKey: /-----BEGIN [A-Z ]+ PRIVATE KEY-----/g
 };
 
+export const detectSecretsSchema = z.object({
+  content: z.string().min(1, "Content cannot be empty").describe("The text content or code to inspect for embedded credentials.")
+});
+
 export const detectSecretsDef = {
   name: "detect_secrets",
   description: "Scans code, configurations, or text for embedded secrets, private keys, API keys, or credentials.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      content: {
-        type: "string",
-        description: "The text content or code to inspect for embedded credentials."
-      }
-    },
-    required: ["content"]
-  }
+  inputSchema: zodToJsonSchema(detectSecretsSchema)
 };
 
-export function handleDetectSecrets(args: { content: string }): { content: { type: string; text: string }[] } {
+export function handleDetectSecrets(args: unknown) {
+  const parsed = detectSecretsSchema.parse(args);
   const secrets: { type: string; maskedValue: string; index: number }[] = [];
 
   for (const [key, pattern] of Object.entries(SECRET_PATTERNS)) {
     let match;
     pattern.lastIndex = 0;
-    while ((match = pattern.exec(args.content)) !== null) {
+    while ((match = pattern.exec(parsed.content)) !== null) {
       const val = match[0];
       let masked = val;
       if (val.length > 8) {
@@ -53,7 +52,7 @@ export function handleDetectSecrets(args: { content: string }): { content: { typ
       }
 
       if (key === "awsSecretKey") {
-        const hasAwsAccessKey = SECRET_PATTERNS.awsAccessKey.test(args.content);
+        const hasAwsAccessKey = SECRET_PATTERNS.awsAccessKey.test(parsed.content);
         if (!hasAwsAccessKey) {
           continue;
         }

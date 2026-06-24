@@ -1,22 +1,20 @@
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { auditOutputContent } from "../utils/securityCheckers";
+
+export const auditAiOutputSchema = z.object({
+  text: z.string().min(1, "Text cannot be empty").describe("The generated output text of the AI assistant.")
+});
 
 export const auditAiOutputDef = {
   name: "audit_ai_output",
   description: "Audits AI assistant output text for potential issues such as harmful content, sensitive data leaks, or hallucination cues.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      text: {
-        type: "string",
-        description: "The generated output text of the AI assistant."
-      }
-    },
-    required: ["text"]
-  }
+  inputSchema: zodToJsonSchema(auditAiOutputSchema)
 };
 
-export function handleAuditAiOutput(args: { text: string }) {
-  const result = auditOutputContent(args.text);
+export function handleAuditAiOutput(args: unknown) {
+  const parsed = auditAiOutputSchema.parse(args);
+  const result = auditOutputContent(parsed.text);
   return {
     content: [
       {
