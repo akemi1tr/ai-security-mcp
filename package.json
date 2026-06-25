@@ -1,11 +1,11 @@
 {
-  "name": "ai-security-mcp-server",
+  "name": "sentinel-mcp",
   "version": "1.0.0",
   "description": "AI Security Model Context Protocol (MCP) Server",
   "main": "build/index.js",
   "type": "commonjs",
   "bin": {
-    "ai-security-mcp": "./build/index.js"
+    "sentinel-mcp": "./build/index.js"
   },
   "scripts": {
     "build": "tsc",

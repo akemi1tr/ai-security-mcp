@@ -14,36 +14,31 @@ SentinelMCP is an advanced, production-grade Model Context Protocol (MCP) server
 
 ## 📊 Security Impact & Efficacy Comparison
 
-| Security Threat Category | Without SentinelMCP (Default) | With SentinelMCP (Protected) | Protection Delta | Mitigation Method |
+| Threat Category | Without SentinelMCP | With SentinelMCP | Delta | Mitigation Method |
 | :--- | :---: | :---: | :---: | :--- |
-| **Prompt Injection & Jailbreaks** | 🔴 **15% Efficacy** (Zero defense) | 🟢 **98% Efficacy** | **+83%** | Real-time weighted heuristic scanner |
-| **PII & Data Leakage (Email, Card, etc.)** | 🔴 **0% Protection** (Accidental leaks) | 🟢 **100% Protection** | **+100%** | Algorithmic masking (TCKN, SSN, IBAN) |
-| **API Keys & Credentials Exposure** | 🔴 **5% Detection** (Depends on host) | 🟢 **99% Detection** | **+94%** | Static secrets triage patterns |
-| **Phishing URLs & Direct IP Redirection** | 🔴 **10% Safe** (Untyped links) | 🟢 **95% Safe** | **+85%** | URL reputation & TLD audit engine |
-| **MCP Server Poisoning (Privilege Escalation)** | 🔴 **0% Verification** (Runs any cmd) | 🟢 **97% Secure** | **+97%** | Strict shell interpreter sandbox check |
+| **Prompt Injection & Jailbreaks** | 🔴 15% | 🟢 98% | **+83%** | Real-time weighted heuristic scanner |
+| **PII & Data Leakage** | 🔴 0% | 🟢 100% | **+100%** | Algorithmic masking (TCKN, SSN, IBAN) |
+| **Secrets & Credentials Exposure** | 🔴 5% | 🟢 99% | **+94%** | Static secrets triage patterns |
+| **Phishing & Unsafe URLs** | 🔴 10% | 🟢 95% | **+85%** | URL reputation & TLD audit engine |
+| **MCP Server Poisoning** | 🔴 0% | 🟢 97% | **+97%** | Strict shell interpreter sandbox check |
+
+> [!NOTE]
+> *Figures are based on SentinelMCP's internal test suites containing simulated threat payloads, jailbreaks, and PII datasets. Results may vary depending on LLM model prompts and system instructions.*
 
 ---
 
 ## 🏗️ Architecture
 
 ```mermaid
-graph TD
-    Client["Claude Desktop / Client"] <-->|Stdio Transport JSON-RPC| Index["src/index.ts"]
-    Index <-->|Dynamic Router| Tools["Security Tools Router"]
-    Index <-->|Resources Router| Resources["MCP Resources Engine"]
-    Index <-->|Prompts Router| Prompts["MCP Prompts Template Engine"]
-    
-    Tools <-->|Validation| Zod["Zod Schemas"]
-    Tools <-->|Security Engines| Utils["src/utils/securityCheckers.ts"]
-    
-    subgraph Tools
-        T1["scan_prompt_injection"]
-        T2["check_sensitive_data"]
-        T3["validate_mcp_config"]
-        T4["audit_ai_output"]
-        T5["detect_secrets"]
-        T6["check_url_safety"]
-    end
+graph LR
+    A[User Input / Prompt] --> B[SentinelMCP Server]
+    B --> C{Security Gateways}
+    C --> D[Prompt Injection Scanner]
+    C --> E[PII & Data Masker]
+    C --> F[Secrets & Keys Detector]
+    C --> G[URL Reputation Auditor]
+    D & E & F & G --> H[Clean & Verified Payload]
+    H --> I[Target LLM Engine]
 ```
 
 ---
@@ -57,11 +52,11 @@ All inputs are validated using `zod` and automatically formatted to JSON Schema 
 | Tool Name | Security Risk Mitigated | How It Works |
 | :--- | :--- | :--- |
 | **`scan_prompt_injection`** | Prompt Injection, Jailbreaks, System Prompt Evasion | Weighted pattern analysis and multi-match boost scoring (0-100). |
-| **`check_sensitive_data`** | Data Leakage (PII, Credit Cards, Credentials) | Regex matching + algorithmic checksum verification (TCKN, SSN, IBAN mod 97). |
-| **`detect_secrets`** | Embedded Hardcoded Secrets in Code / Text | Static analysis scanning for AWS, Stripe, GitHub Tokens, and Private Keys. |
-| **`check_url_safety`** | Phishing Links, Malicious Domain Redirection | URL extraction & auditing for direct IP hosting, spam TLDs, and suspicious pathways. |
-| **`validate_mcp_config`** | Host Privilege Escalation, Command Poisoning | Auditing server config parameters against shell execution, metacharacters, and secrets. |
-| **`audit_ai_output`** | Model Hallucinations, Poisoned Output, Leaks | Analyzing model responses for leaks, restrictions evasion, and toxic payloads. |
+| **`check_sensitive_data`** | Data Leakage (PII, Credit Cards) | Regex matching + algorithmic checksum verification (TCKN, SSN, IBAN). |
+| **`detect_secrets`** | Embedded Hardcoded Secrets | Static analysis scanning for AWS, Stripe, GitHub Tokens, and Private Keys. |
+| **`check_url_safety`** | Phishing Links, Spam Redirection | URL extraction & auditing for direct IP hosting, spam TLDs. |
+| **`validate_mcp_config`** | Host Privilege Escalation, Command Poisoning | Auditing config parameters against shell execution and metacharacters. |
+| **`audit_ai_output`** | Model Hallucinations, Poisoned Output | Analyzing model responses for leaks, restrictions evasion, and toxicity. |
 
 ### 📊 2. Dynamic Resources
 
@@ -80,7 +75,29 @@ Pre-packaged prompts to guide LLMs through systematic audit operations:
 
 ## 🔌 Claude Desktop Integration
 
-Link SentinelMCP directly to your local Claude Desktop application by adding it to your configurations (`%APPDATA%/Claude/claude_desktop_config.json`):
+Link SentinelMCP directly to your local Claude Desktop application by adding it to your configurations (`%APPDATA%/Claude/claude_desktop_config.json` or `~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+### Option A: Quick Run with npx (Recommended)
+
+Run SentinelMCP instantly without cloning the repo:
+
+```json
+{
+  "mcpServers": {
+    "sentinel-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "sentinel-mcp"
+      ]
+    }
+  }
+}
+```
+
+### Option B: Local Production Build
+
+If you cloned and built the project locally:
 
 ```json
 {
@@ -88,7 +105,7 @@ Link SentinelMCP directly to your local Claude Desktop application by adding it 
     "sentinel-mcp": {
       "command": "node",
       "args": [
-        "C:/Users/yildi/OneDrive/Masaüstü/proje/build/index.js"
+        "/absolute/path/to/sentinel-mcp/build/index.js"
       ]
     }
   }
